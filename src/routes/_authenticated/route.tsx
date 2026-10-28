@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, redirect, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LayoutGrid, LogOut, Moon, Sun, Users } from "lucide-react";
+import { CalendarDays, LayoutGrid, LogOut, Moon, Sun, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,10 @@ function Layout() {
         <nav className="flex items-center gap-1 text-sm">
           <Link to="/projetos" className="rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground bg-secondary" }}>
             Projetos
+          </Link>
+          <Link to="/agenda" className="rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground bg-secondary" }}>
+            <CalendarDays className="mr-1 inline h-4 w-4" />
+            Agenda
           </Link>
           <Link to="/equipe" className="rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground bg-secondary" }}>
             <Users className="mr-1 inline h-4 w-4" />

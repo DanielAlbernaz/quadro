@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Archive, ArchiveRestore, FolderKanban, MoreHorizontal, Pencil, Plus } from "lucide-react";
+import { Archive, ArchiveRestore, CalendarDays, FolderKanban, MoreHorizontal, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ProjectDialog, type ProjectRow } from "@/components/ProjectDialog";
 import { useImageUrl } from "@/lib/data";
+import { todayISO } from "@/lib/calendar";
 
 export const Route = createFileRoute("/_authenticated/projetos")({
   head: () => ({
@@ -66,6 +67,8 @@ function Projetos() {
         </div>
       </div>
 
+      <AgendaHoje />
+
       {isLoading ? (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2].map((i) => <div key={i} className="h-64 animate-pulse rounded-xl bg-card" />)}
@@ -123,5 +126,50 @@ function ProjectCard({ p, onEdit, onArchive }: { p: P; onEdit: () => void; onArc
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
+  );
+}
+
+type EvHoje = { id: string; titulo: string; descricao: string; projects: { nome: string; prefixo: string } | null };
+
+function AgendaHoje() {
+  const hoje = todayISO();
+  const { data: eventos = [] } = useQuery({
+    queryKey: ["agenda-hoje", hoje],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agenda_events")
+        .select("id, titulo, descricao, projects(nome, prefixo)")
+        .eq("data", hoje)
+        .order("created_at");
+      if (error) throw error;
+      return data as unknown as EvHoje[];
+    },
+  });
+  return (
+    <section className="mb-8 rounded-xl border bg-card p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 font-semibold">
+          <CalendarDays className="h-4 w-4 text-primary" /> Agenda de hoje
+          {eventos.length > 0 && <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs text-primary">{eventos.length}</span>}
+        </h2>
+        <Link to="/agenda" className="text-sm text-primary hover:underline">Ver agenda completa</Link>
+      </div>
+      {eventos.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhum evento para hoje.</p>
+      ) : (
+        <ul className="space-y-2">
+          {eventos.map((ev) => (
+            <li key={ev.id} className="flex items-start gap-3 rounded-lg bg-muted/40 px-3 py-2">
+              {ev.projects && <span className="mt-0.5 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{ev.projects.prefixo}</span>}
+              <div className="min-w-0">
+                <p className="text-sm font-medium">{ev.titulo}</p>
+                {ev.descricao && <p className="truncate text-xs text-muted-foreground">{ev.descricao}</p>}
+              </div>
+              {ev.projects && <span className="ml-auto shrink-0 text-xs text-muted-foreground">{ev.projects.nome}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
