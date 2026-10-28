@@ -34,3 +34,14 @@ A primeira conta criada vira dona (owner). Os demais entram por convite na tela 
 ## Scripts
 
 `npm run dev` · `npm run build` · `npm test` · `npm run lint`
+
+## Avisos no Discord
+
+Ao criar uma tarefa ou movê-la de coluna, o app posta um aviso (com @everyone) no canal do Discord,
+pela função `api/discord.ts`. Configuração:
+
+1. No Discord: canal → **Editar canal → Integrações → Webhooks → Novo webhook → Copiar URL**.
+2. No Vercel: **Settings → Environment Variables** → `DISCORD_WEBHOOK_URL` = a URL copiada
+   (tipo **Secret**, sem prefixo `VITE_`) e faça **Redeploy**.
+
+O bot aparece como "Albertech Studios" com a logo `public/albertech-logo.webp`.

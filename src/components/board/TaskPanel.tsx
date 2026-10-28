@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { ArrowRight, Check, Plus, Trash2, Users, Tag as TagIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { notifyDiscord } from "@/lib/discord";
 import type { Column, CustomField, Tag, Task } from "@/lib/board";
 import type { Member } from "@/lib/data";
 import { PRIORIDADES, TAG_CORES, TIPOS, isOverdue, type Prioridade, type Tipo } from "@/lib/meta";
@@ -71,7 +72,10 @@ export function TaskPanel({ task, prefixo, projectId, columns, members, tags, fi
     const { error } = await supabase.from("tasks").update(clean).eq("id", task.id);
     if (error) return toast.error(error.message);
     refresh();
-    if ("column_id" in clean) refreshExtras();
+    if ("column_id" in clean) {
+      refreshExtras();
+      if (clean.column_id !== task.column_id) void notifyDiscord(task.id, "moved", columns.find((c) => c.id === task.column_id)?.nome);
+    }
   }
 
   async function toggleAssignee(uid: string) {

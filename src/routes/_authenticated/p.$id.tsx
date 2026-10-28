@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useBoard, type Task } from "@/lib/board";
 import { useMe, useMembers } from "@/lib/data";
 import { insertionPosition, reordered } from "@/lib/board-order";
+import { notifyDiscord } from "@/lib/discord";
 import { PRIORIDADES, TIPOS, type Prioridade, type Tipo } from "@/lib/meta";
 import { BoardColumn } from "@/components/board/BoardColumn";
 import { TaskCardView } from "@/components/board/TaskCard";
@@ -66,9 +67,10 @@ function ProjectBoard() {
 
   async function createTask(columnId: string, titulo: string) {
     const siblings = tasks.filter((t) => t.column_id === columnId);
-    const { error } = await supabase.from("tasks").insert({ project_id: id, column_id: columnId, titulo, posicao: insertionPosition(siblings, siblings.length) });
+    const { data, error } = await supabase.from("tasks").insert({ project_id: id, column_id: columnId, titulo, posicao: insertionPosition(siblings, siblings.length) }).select("id").single();
     if (error) return toast.error(error.message);
     refresh();
+    void notifyDiscord(data.id, "created");
   }
 
   async function createColumn(e: React.FormEvent) {
@@ -120,6 +122,7 @@ function ProjectBoard() {
     qc.setQueryData<Task[]>(["tasks", id], (old) => old?.map((t) => t.id === task.id ? { ...t, column_id: columnId, posicao } : t).sort((a, b) => a.posicao - b.posicao));
     const { error } = await supabase.from("tasks").update({ column_id: columnId, posicao }).eq("id", task.id);
     if (error) toast.error(error.message);
+    else if (task.column_id !== columnId) void notifyDiscord(task.id, "moved", columns.find((c) => c.id === task.column_id)?.nome);
     refresh();
   }
 
