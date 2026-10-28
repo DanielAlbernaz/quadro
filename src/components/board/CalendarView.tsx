@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { notifyDiscordAgenda } from "@/lib/discord";
 import { monthGrid, todayISO } from "@/lib/calendar";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,11 +48,12 @@ export function CalendarView({ projectId }: { projectId: string }) {
     if (!draft || !draft.titulo.trim() || busy) return;
     setBusy(true);
     const payload = { titulo: draft.titulo.trim(), descricao: draft.descricao, data: draft.data };
-    const { error } = draft.id
-      ? await supabase.from("agenda_events").update(payload).eq("id", draft.id)
-      : await supabase.from("agenda_events").insert({ ...payload, project_id: projectId });
+    const { data: saved, error } = draft.id
+      ? await supabase.from("agenda_events").update(payload).eq("id", draft.id).select("id").single()
+      : await supabase.from("agenda_events").insert({ ...payload, project_id: projectId }).select("id").single();
     setBusy(false);
     if (error) return toast.error(error.message);
+    void notifyDiscordAgenda(saved.id, draft.id ? "updated" : "created");
     toast.success(draft.id ? "Evento atualizado" : "Evento criado");
     done();
   }
